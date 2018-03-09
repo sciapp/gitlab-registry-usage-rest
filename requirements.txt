@@ -1,0 +1,6 @@
+CherryPy
+Flask
+Flask-Cors
+Flask-RESTful
+gitlab-registry-usage
+schedule

@@ -38,8 +38,12 @@ setup(
     version=__version__,
     packages=find_packages(),
     install_requires=[
+        'CherryPy',
+        'Flask',
+        'Flask-Cors',
+        'Flask-RESTful',
         'gitlab-registry-usage',
-        'flask'
+        'schedule'
     ],
     entry_points={
         'console_scripts': [
