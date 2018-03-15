@@ -45,8 +45,7 @@ setup(
         'Flask-JWT-Extended',
         'Flask-RESTful',
         'gitlab-registry-usage',
-        'ldap3',
-        'schedule'
+        'ldap3'
     ],
     entry_points={
         'console_scripts': [

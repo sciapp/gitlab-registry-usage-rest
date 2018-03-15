@@ -1,4 +1,3 @@
-import schedule
 import threading
 import time
 from gitlab_registry_usage.registry.high_level_api import GitLabRegistry
@@ -31,11 +30,13 @@ class GitLabRegistryCache:
 
     def update_continuously(self, minutes_interval=60):
         def job_function():
+            time_delta = 0
             while True:
-                schedule.run_pending()
-                time.sleep(10)
+                start_time = time.time()
+                self.update()
+                time_delta = time.time() - start_time
+                time.sleep(minutes_interval * 60 - time_delta)
 
-        schedule.every(minutes_interval).minutes.do(self.update)
         thread = threading.Thread(target=job_function)
         thread.start()
         return thread
