@@ -1,0 +1,28 @@
+stages:
+  - build
+  - deploy
+
+build:
+  image: docker:latest
+  stage: build
+  variables:
+    DOCKER_DRIVER: overlay2
+  services:
+    - docker:dind
+  script:
+    - apk --no-cache add gettext
+    - envsubst < Dockerfile > Dockerfile_envsubst
+    - docker build -t ${CI_REGISTRY_IMAGE}:latest -f Dockerfile_envsubst .
+    - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
+    - docker push ${CI_REGISTRY_IMAGE}:latest
+  only:
+    - tags
+
+deploy:
+  stage: deploy
+  image: iffregistry.fz-juelich.de/florianrhiem/iffdocker-deployment-image:latest
+  script:
+    - echo "$IFFDOCKER_KEY" > ~/.ssh/iffdocker_key
+    - echo -e "$CI_JOB_TOKEN\n$CI_REGISTRY_IMAGE:latest\ngitlab-registry-usage-rest" | ssh docker.iff.kfa-juelich.de
+  only:
+    - tags@Scientific-IT-Systems/administration/gitlab-registry-usage-rest
