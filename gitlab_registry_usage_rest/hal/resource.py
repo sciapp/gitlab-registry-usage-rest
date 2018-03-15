@@ -1,6 +1,7 @@
 import re
 import flask_restful as rest
 import sys
+from flask_jwt_extended import jwt_required
 from flask_restful.reqparse import RequestParser
 
 
@@ -111,6 +112,7 @@ class Resource(rest.Resource):
             embed_resources(resource)
         return resource
 
+    @jwt_required
     def get(self, *args):
         def parse_args():
             def is_valid_true_string(string):

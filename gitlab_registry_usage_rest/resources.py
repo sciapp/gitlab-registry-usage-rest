@@ -1,4 +1,7 @@
 import collections
+import flask_restful as rest
+from flask import jsonify
+from .auth import http_basic_auth, create_jwt
 from .config import config
 from .cache import GitLabRegistryCache
 from .hal.representation import Api as HalApi
@@ -7,6 +10,13 @@ from .hal.resource import Resource, Embedded, Link
 RequestContext = collections.namedtuple('RequestContext', ['registry', 'timestamp'])
 
 _request_context = None
+
+
+class AuthToken(rest.Resource):
+    @http_basic_auth.login_required
+    def get(self):
+        auth_token = create_jwt()
+        return jsonify({'auth_token': auth_token})
 
 
 class Images(Resource):
@@ -110,6 +120,7 @@ def init_resources(app):
 
     def init_api():
         api = HalApi(app)
+        api.add_resource(AuthToken, '/auth_token')
         api.add_resource(Images, '/images')
         api.add_resource(Image, '/images/<image_name>')
         api.add_resource(Tags, '/images/<image_name>/tags')

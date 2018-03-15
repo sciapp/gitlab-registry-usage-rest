@@ -6,6 +6,7 @@ import os
 import sys
 from flask import Flask
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
 from . import resources
 from .config import Config, config, DEFAULT_CONFIG_FILENAME
 from ._version import __version__, __version_info__  # noqa: F401 # pylint: disable=unused-import
@@ -25,7 +26,13 @@ class AttributeDict(dict):
 
 def setup_app():
     app = Flask(__name__)
+    # `PROPAGATE_EXCEPTIONS` must be set explicitly, otherwise jwt error handling won't work with flask-restful in
+    # production mode
+    app.config['PROPAGATE_EXCEPTIONS'] = True
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = config.jwt_auth_token_expires
+    app.config['JWT_SECRET_KEY'] = config.jwt_secret_key
     CORS(app)
+    JWTManager(app)
     resources.init_resources(app)
     return app
 

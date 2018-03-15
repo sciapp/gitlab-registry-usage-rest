@@ -41,8 +41,11 @@ setup(
         'CherryPy',
         'Flask',
         'Flask-Cors',
+        'Flask-HTTPAuth',
+        'Flask-JWT-Extended',
         'Flask-RESTful',
         'gitlab-registry-usage',
+        'ldap3',
         'schedule'
     ],
     entry_points={
