@@ -84,6 +84,8 @@ class Resource(rest.Resource):
             resource['_links'] = {'self': {'href': re.sub(r'<.*>', '{}', cls._primary_url).format(*args)}}
             try:
                 links = cls.links(*args)
+                if links is None:
+                    return
                 if isinstance(links, Link):
                     links = [links]
                 links = [link for link in links if link.link is not None]
@@ -94,6 +96,8 @@ class Resource(rest.Resource):
         def embed_resources(resource):
             try:
                 embeddeds = cls.embedded(*args)
+                if embeddeds is None:
+                    return
                 if isinstance(embeddeds, Embedded):
                     embeddeds = [embeddeds]
                 embeddeds = [embedded for embedded in embeddeds if embedded.has_data]
