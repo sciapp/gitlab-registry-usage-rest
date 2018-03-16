@@ -38,7 +38,7 @@ setup(
     version=__version__,
     packages=find_packages(),
     install_requires=[
-        'CherryPy',
+        'cheroot',
         'Flask',
         'Flask-Cors',
         'Flask-HTTPAuth',

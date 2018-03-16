@@ -1,4 +1,4 @@
-CherryPy
+cheroot
 Flask
 Flask-Cors
 Flask-HTTPAuth

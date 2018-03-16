@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
-import cherrypy
 import os
 import sys
+from cheroot import wsgi
 from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from werkzeug.serving import run_simple
+from werkzeug.wsgi import DispatcherMiddleware
 from . import resources
 from .config import Config, config, DEFAULT_CONFIG_FILENAME
 from ._version import __version__, __version_info__  # noqa: F401 # pylint: disable=unused-import
@@ -28,6 +30,7 @@ def setup_app():
     app = Flask(__name__)
     # `PROPAGATE_EXCEPTIONS` must be set explicitly, otherwise jwt error handling won't work with flask-restful in
     # production mode
+    app.config['DEBUG'] = config.debug
     app.config['PROPAGATE_EXCEPTIONS'] = True
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = config.jwt_auth_token_expires
     app.config['JWT_SECRET_KEY'] = config.jwt_secret_key
@@ -88,16 +91,17 @@ def main():
         sys.exit(0)
     config.read_config(args.config_filename)
     app = setup_app()
-    cherrypy.tree.graft(app, config.server_prefix)
-    cherrypy.config.update(
-        {
-            'environment': 'test_suite' if config.debug else 'production',
-            'server.socket_host': config.socket_host,
-            'server.socket_port': config.socket_port
-        }
-    )
-    cherrypy.engine.start()
-    cherrypy.engine.block()
+    if config.debug:
+        if config.server_prefix != '/':
+            app = DispatcherMiddleware(Flask('debugging_frontend'), {config.server_prefix: app})
+        run_simple(config.socket_host, config.socket_port, app, use_debugger=True, use_reloader=True)
+    else:
+        wsgi_server = wsgi.Server(
+            (config.socket_host, config.socket_port), wsgi.PathInfoDispatcher({
+                config.server_prefix: app
+            })
+        )
+        wsgi_server.safe_start()
 
 
 if __name__ == '__main__':
