@@ -54,15 +54,17 @@ class Image(Resource):
 
     @staticmethod
     def embedded(image_name):
-        return Embedded('related', Tags, (image_name, ))
+        if _request_context.registry.image_tags[image_name] is not None:
+            return Embedded('related', Tags, (image_name, ))
+        else:
+            return None
 
     @staticmethod
     def links(image_name):
-        return (
-            Link('collection', '/images'), Link('related', ('/images/{}/tags'.format(image_name), {
-                'title': 'tags'
-            }))
-        )
+        links = [Link('collection', '/images')]
+        if _request_context.registry.image_tags[image_name] is not None:
+            links.append(Link('related', ('/images/{}/tags'.format(image_name), {'title': 'tags'})))
+        return links
 
 
 class Tags(Resource):
@@ -72,27 +74,34 @@ class Tags(Resource):
 
     @staticmethod
     def embedded(image_name):
-        return Embedded(
-            'items',
-            Tag,
-            *[(image_name, tag_name) for tag_name in _request_context.registry.image_tags[image_name]],
-            always_as_list=True
-        )
+        if _request_context.registry.image_tags[image_name] is not None:
+            return Embedded(
+                'items',
+                Tag,
+                *[(image_name, tag_name) for tag_name in _request_context.registry.image_tags[image_name]],
+                always_as_list=True
+            )
+        else:
+            return None
 
     @staticmethod
     def links(image_name):
-        return (
-            Link('up', '/images/{}'.format(image_name)),
-            Link(
-                'items',
-                *[
-                    ('/images/{}/tags/{}'.format(image_name, tag_name), {
-                        'title': image_name
-                    }) for tag_name in _request_context.registry.image_tags[image_name]
-                ],
-                always_as_list=True
+        links = [Link('up', '/images/{}'.format(image_name))]
+        if _request_context.registry.image_tags[image_name] is not None:
+            links.append(
+                Link(
+                    'items',
+                    *[
+                        ('/images/{}/tags/{}'.format(image_name, tag_name), {
+                            'title': image_name
+                        }) for tag_name in _request_context.registry.image_tags[image_name]
+                    ],
+                    always_as_list=True
+                )
             )
-        )
+            return links
+        else:
+            return None
 
 
 class Tag(Resource):
