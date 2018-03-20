@@ -32,10 +32,16 @@ class Embedded:
         if len(self._params_list) > 1 or (self._always_as_list and self._params_list):
             return [
                 self._resource.to_dict(*params, embed=embed - 1, include_links=include_links)
+                if isinstance(params, (list, tuple)) else
+                self._resource.to_dict(**params, embed=embed - 1, include_links=include_links)
                 for params in self._params_list
             ]
         elif len(self._params_list) == 1:
-            return self._resource.to_dict(*self._params_list[0], embed=embed - 1, include_links=include_links)
+            params = self._params_list[0]
+            if isinstance(params, (list, tuple)):
+                return self._resource.to_dict(*params, embed=embed - 1, include_links=include_links)
+            else:
+                return self._resource.to_dict(**params, embed=embed - 1, include_links=include_links)
         else:
             return None
 
@@ -79,11 +85,34 @@ class Resource(rest.Resource):
     _request_parser.add_argument('links')
 
     @classmethod
-    def to_dict(cls, *args, embed=0, include_links=True):
-        def add_links(resource):
-            resource['_links'] = {'self': {'href': re.sub(r'<.*>', '{}', cls._primary_url).format(*args)}}
+    def to_dict(cls, *args, embed=0, include_links=True, **kwargs):
+        def extract_keywords_from_url(url):
+            found_keywords = []
+
+            def save_found_keyword(match_obj):
+                found_keywords.append(match_obj.group(1))
+
+            re.sub(r'<(?:[^:>]*:)?([^>]*)>', save_found_keyword, url)
+            return found_keywords
+
+        def merge_args_and_kwargs(*args, **kwargs):
+            url_keywords = extract_keywords_from_url(cls._primary_url)
+            merged_kwargs = {url_keyword: arg for url_keyword, arg in zip(url_keywords, args)}
+            merged_kwargs.update(kwargs)
+            # cheroot / CherryPy unquotes URLs but not ``%2F`` which is the path separator -> unquote it explicitly
+            # see https://github.com/cherrypy/cheroot/blob/v6.0.0/cheroot/server.py#L826 for more explanation
+            for url_keyword in url_keywords:
+                merged_kwargs[url_keyword] = '/'.join(re.split(r'%2F', merged_kwargs[url_keyword], flags=re.IGNORECASE))
+            return merged_kwargs
+
+        def add_links(resource, **kwargs):
+            def substitute(match_obj):
+                keyword = match_obj.group(1)
+                return kwargs[keyword]
+
+            resource['_links'] = {'self': {'href': re.sub(r'<(?:.*:)?([^>]*)>', substitute, cls._primary_url)}}
             try:
-                links = cls.links(*args)
+                links = cls.links(**kwargs)
                 if links is None:
                     return
                 if isinstance(links, Link):
@@ -93,9 +122,9 @@ class Resource(rest.Resource):
             except AttributeError:
                 pass
 
-        def embed_resources(resource):
+        def embed_resources(resource, **kwargs):
             try:
-                embeddeds = cls.embedded(*args)
+                embeddeds = cls.embedded(**kwargs)
                 if embeddeds is None:
                     return
                 if isinstance(embeddeds, Embedded):
@@ -109,15 +138,16 @@ class Resource(rest.Resource):
             except AttributeError:
                 pass
 
-        resource = dict(cls.data(*args))
+        merged_kwargs = merge_args_and_kwargs(*args, **kwargs)
+        resource = dict(cls.data(**merged_kwargs))
         if include_links:
-            add_links(resource)
+            add_links(resource, **merged_kwargs)
         if embed > 0:
-            embed_resources(resource)
+            embed_resources(resource, **merged_kwargs)
         return resource
 
     @jwt_required
-    def get(self, *args):
+    def get(self, **kwargs):
         def parse_args():
             def is_valid_true_string(string):
                 return string is not None and string.lower() in ('true', 'yes', '1', 't', 'y')
@@ -131,5 +161,4 @@ class Resource(rest.Resource):
             return embed, links
 
         embed, include_links = parse_args()
-        print('embed:', embed, 'include_links:', include_links)
-        return self.to_dict(*args, embed=embed, include_links=include_links)
+        return self.to_dict(embed=embed, include_links=include_links, **kwargs)

@@ -131,9 +131,9 @@ def init_resources(app):
         api = HalApi(app)
         api.add_resource(AuthToken, '/auth_token')
         api.add_resource(Images, '/images')
-        api.add_resource(Image, '/images/<image_name>')
-        api.add_resource(Tags, '/images/<image_name>/tags')
-        api.add_resource(Tag, '/images/<image_name>/tags/<tag_name>')
+        api.add_resource(Image, '/images/<path:image_name>')
+        api.add_resource(Tags, '/images/<path:image_name>/tags')
+        api.add_resource(Tag, '/images/<path:image_name>/tags/<path:tag_name>')
         return api
 
     gitlab_registry_cache = init_registry()
