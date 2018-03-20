@@ -3,6 +3,7 @@ import flask_restful as rest
 import sys
 from flask_jwt_extended import jwt_required
 from flask_restful.reqparse import RequestParser
+from urllib.parse import quote
 
 
 class Embedded:
@@ -47,21 +48,21 @@ class Embedded:
 
 
 class Link:
-    def __init__(self, rel, *links, always_as_list=False):
+    def __init__(self, rel, *links, always_as_list=False, quote=True):
         self._rel = rel
+        self._always_as_list = always_as_list
+        self._quote = quote
         self._links = []
         for link in links:
             link_dict = self._create_link_dict(link)
             self._links.append(link_dict)
-        self._always_as_list = always_as_list
 
-    @staticmethod
-    def _create_link_dict(link):
+    def _create_link_dict(self, link):
         if isinstance(link, (list, tuple)):
             href, extra_attributes = link
         else:
             href, extra_attributes = link, {}
-        link_dict = {'href': href}
+        link_dict = {'href': quote(href) if self._quote else href}
         link_dict.update(extra_attributes)
         return link_dict
 
@@ -108,35 +109,33 @@ class Resource(rest.Resource):
         def add_links(resource, **kwargs):
             def substitute(match_obj):
                 keyword = match_obj.group(1)
-                return kwargs[keyword]
+                return quote(kwargs[keyword], safe='')
 
-            resource['_links'] = {'self': {'href': re.sub(r'<(?:.*:)?([^>]*)>', substitute, cls._primary_url)}}
+            self_link = Link('self', re.sub(r'<(?:.*:)?([^>]*)>', substitute, cls._primary_url), quote=False)
+            resource['_links'] = {self_link.rel: self_link.link}
             try:
                 links = cls.links(**kwargs)
-                if links is None:
-                    return
-                if isinstance(links, Link):
-                    links = [links]
-                links = [link for link in links if link.link is not None]
-                resource['_links'].update({link.rel: link.link for link in links})
             except AttributeError:
-                pass
+                return
+            if links is None:
+                return
+            if isinstance(links, Link):
+                links = [links]
+            links = [link for link in links if link.link is not None]
+            resource['_links'].update({link.rel: link.link for link in links})
 
         def embed_resources(resource, **kwargs):
             try:
                 embeddeds = cls.embedded(**kwargs)
-                if embeddeds is None:
-                    return
-                if isinstance(embeddeds, Embedded):
-                    embeddeds = [embeddeds]
-                embeddeds = [embedded for embedded in embeddeds if embedded.has_data]
-                resource['_embedded'] = {}
-                resource['_embedded'].update(
-                    {embedded.rel: embedded.data(embed, include_links)
-                     for embedded in embeddeds}
-                )
             except AttributeError:
-                pass
+                return
+            if embeddeds is None:
+                return
+            if isinstance(embeddeds, Embedded):
+                embeddeds = [embeddeds]
+            embeddeds = [embedded for embedded in embeddeds if embedded.has_data]
+            resource['_embedded'] = {}
+            resource['_embedded'].update({embedded.rel: embedded.data(embed, include_links) for embedded in embeddeds})
 
         merged_kwargs = merge_args_and_kwargs(*args, **kwargs)
         resource = dict(cls.data(**merged_kwargs))
