@@ -1,6 +1,7 @@
 import collections
 import flask_restful as rest
 from flask import jsonify
+from urllib.parse import quote
 from .auth import http_basic_auth, create_jwt
 from .config import config
 from .cache import GitLabRegistryCache
@@ -35,11 +36,12 @@ class Images(Resource):
         return Link(
             'items',
             *[
-                ('/images/{}'.format(image_name), {
+                ('/images/{}'.format(quote(image_name, safe='')), {
                     'title': image_name
                 }) for image_name in _request_context.registry.registry_catalog
             ],
-            always_as_list=True
+            always_as_list=True,
+            quote=False
         )
 
 
@@ -63,7 +65,11 @@ class Image(Resource):
     def links(image_name):
         links = [Link('collection', '/images')]
         if _request_context.registry.image_tags[image_name] is not None:
-            links.append(Link('related', ('/images/{}/tags'.format(image_name), {'title': 'tags'})))
+            links.append(
+                Link('related', ('/images/{}/tags'.format(quote(image_name, safe='')), {
+                    'title': 'tags'
+                }), quote=False)
+            )
         return links
 
 
@@ -86,17 +92,20 @@ class Tags(Resource):
 
     @staticmethod
     def links(image_name):
-        links = [Link('up', '/images/{}'.format(image_name))]
+        links = [Link('up', '/images/{}'.format(quote(image_name, safe='')), quote=False)]
         if _request_context.registry.image_tags[image_name] is not None:
             links.append(
                 Link(
                     'items',
                     *[
-                        ('/images/{}/tags/{}'.format(image_name, tag_name), {
-                            'title': image_name
-                        }) for tag_name in _request_context.registry.image_tags[image_name]
+                        (
+                            '/images/{}/tags/{}'.format(quote(image_name, safe=''), quote(tag_name, safe='')), {
+                                'title': image_name
+                            }
+                        ) for tag_name in _request_context.registry.image_tags[image_name]
                     ],
-                    always_as_list=True
+                    always_as_list=True,
+                    quote=False
                 )
             )
             return links
@@ -115,7 +124,7 @@ class Tag(Resource):
 
     @staticmethod
     def links(image_name, tag_name):
-        return Link('collection', '/images/{}/tags'.format(image_name))
+        return Link('collection', '/images/{}/tags'.format(quote(image_name, safe='')), quote=False)
 
 
 def init_resources(app):
