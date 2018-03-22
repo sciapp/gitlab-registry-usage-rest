@@ -1,26 +1,32 @@
 import collections
-import flask_restful as rest
 from flask import jsonify
+from flask_jwt_extended import jwt_required
+from flask_restful import Resource as RestResource
+from flask_restful_hal import Api, Embedded, Link, Resource as HalResource
 from urllib.parse import quote
 from .auth import http_basic_auth, create_jwt
 from .config import config
 from .cache import GitLabRegistryCache
-from .hal.representation import Api as HalApi
-from .hal.resource import Resource, Embedded, Link
 
 RequestContext = collections.namedtuple('RequestContext', ['registry', 'timestamp'])
 
 _request_context = None
 
 
-class AuthToken(rest.Resource):
+class SecuredHalResource(HalResource):
+    @jwt_required
+    def get(self, **kwargs):
+        return super().get(**kwargs)
+
+
+class AuthToken(RestResource):
     @http_basic_auth.login_required
     def get(self):
         auth_token = create_jwt()
         return jsonify({'auth_token': auth_token})
 
 
-class Images(Resource):
+class Images(SecuredHalResource):
     @staticmethod
     def data():
         return {'timestamp': _request_context.timestamp}
@@ -45,7 +51,7 @@ class Images(Resource):
         )
 
 
-class Image(Resource):
+class Image(SecuredHalResource):
     @staticmethod
     def data(image_name):
         return {
@@ -73,7 +79,7 @@ class Image(Resource):
         return links
 
 
-class Tags(Resource):
+class Tags(SecuredHalResource):
     @staticmethod
     def data(image_name):
         return {}
@@ -113,7 +119,7 @@ class Tags(Resource):
             return None
 
 
-class Tag(Resource):
+class Tag(SecuredHalResource):
     @staticmethod
     def data(image_name, tag_name):
         return {
@@ -137,7 +143,7 @@ def init_resources(app):
         return gitlab_registry_cache
 
     def init_api():
-        api = HalApi(app)
+        api = Api(app)
         api.add_resource(AuthToken, '/auth_token')
         api.add_resource(Images, '/images')
         api.add_resource(Image, '/images/<path:image_name>')
