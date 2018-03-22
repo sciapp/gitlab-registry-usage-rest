@@ -12,6 +12,7 @@ from werkzeug.wsgi import DispatcherMiddleware
 from . import resources
 from .config import Config, config, DEFAULT_CONFIG_FILENAME
 from ._version import __version__, __version_info__  # noqa: F401 # pylint: disable=unused-import
+from typing import cast, Any, AnyStr, Callable
 
 
 class ConfigFileNotAccessibleError(Exception):
@@ -19,14 +20,14 @@ class ConfigFileNotAccessibleError(Exception):
 
 
 class AttributeDict(dict):
-    def __getattr__(self, attr):
+    def __getattr__(self, attr: str) -> Any:
         return self[attr]
 
-    def __setattr__(self, attr, value):
+    def __setattr__(self, attr: str, value: Any) -> None:
         self[attr] = value
 
 
-def setup_app():
+def setup_app() -> Flask:
     app = Flask(__name__)
     # `PROPAGATE_EXCEPTIONS` must be set explicitly, otherwise jwt error handling won't work with flask-restful in
     # production mode
@@ -40,7 +41,7 @@ def setup_app():
     return app
 
 
-def get_argumentparser():
+def get_argumentparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description='''
@@ -52,7 +53,7 @@ def get_argumentparser():
         '--config-file',
         action='store',
         dest='config_filename',
-        type=os.path.abspath,
+        type=cast(Callable[[str], AnyStr], os.path.abspath),
         default=DEFAULT_CONFIG_FILENAME,
         help='web service config file (default: %(default)s)'
     )
@@ -72,7 +73,7 @@ def get_argumentparser():
     return parser
 
 
-def parse_arguments():
+def parse_arguments() -> AttributeDict:
     parser = get_argumentparser()
     args = AttributeDict({key: value for key, value in vars(parser.parse_args()).items()})
     if not args.print_default_config and not args.print_version:
@@ -81,7 +82,7 @@ def parse_arguments():
     return args
 
 
-def main():
+def main() -> None:
     args = parse_arguments()
     if args.print_version:
         print('{}, version {}'.format(os.path.basename(sys.argv[0]), __version__))
@@ -93,8 +94,8 @@ def main():
     app = setup_app()
     if config.debug:
         if config.server_prefix != '/':
-            app = DispatcherMiddleware(Flask('debugging_frontend'), {config.server_prefix: app})
-        run_simple(config.socket_host, config.socket_port, app, use_debugger=True, use_reloader=True)
+            app = DispatcherMiddleware(Flask('debugging_frontend'), {config.server_prefix: app})  # type: ignore
+        run_simple(config.socket_host, config.socket_port, app, use_debugger=True, use_reloader=True)  # type: ignore
     else:
         wsgi_server = wsgi.Server(
             (config.socket_host, config.socket_port), wsgi.PathInfoDispatcher({
