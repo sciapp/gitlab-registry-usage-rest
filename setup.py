@@ -44,7 +44,9 @@ setup(
         'Flask-HTTPAuth',
         'Flask-JWT-Extended',
         'Flask-RESTful',
+        'flask-restful-hal',
         'gitlab-registry-usage',
+        'json2html',
         'ldap3'
     ],
     entry_points={
