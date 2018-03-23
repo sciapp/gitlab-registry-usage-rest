@@ -12,6 +12,16 @@ from setuptools import setup, find_packages
 from gitlab_registry_usage_rest._version import __version__
 
 
+def get_install_requires_from_requirements(requirements_filename='requirements.txt'):
+    try:
+        with codecs.open(requirements_filename, 'r', 'utf-8') as requirements_file:
+            requirements = requirements_file.readlines()
+    except OSError:
+        import logging
+        logging.warning('Could not convert the readme file to rst.')
+    return requirements
+
+
 def get_long_description_from_readme(readme_filename='README.md'):
     rst_filename = '{}.rst'.format(os.path.splitext(os.path.basename(readme_filename))[0])
     created_tmp_rst = False
@@ -32,23 +42,13 @@ def get_long_description_from_readme(readme_filename='README.md'):
 
 
 long_description = get_long_description_from_readme()
+install_requires = get_install_requires_from_requirements()
 
 setup(
     name='gitlab-registry-usage-rest',
     version=__version__,
     packages=find_packages(),
-    install_requires=[
-        'cheroot',
-        'Flask',
-        'Flask-Cors',
-        'Flask-HTTPAuth',
-        'Flask-JWT-Extended',
-        'Flask-RESTful',
-        'flask-restful-hal',
-        'gitlab-registry-usage',
-        'json2html',
-        'ldap3'
-    ],
+    install_requires=install_requires,
     entry_points={
         'console_scripts': [
             'gitlab-registry-usage-rest = gitlab_registry_usage_rest.app:main',
@@ -59,7 +59,7 @@ setup(
     description='A restful web service for querying the image sizes of a GitLab registry.',
     long_description=long_description,
     license='MIT',
-    url='https://github.com/gitlab-registry-usage-rest',
+    url='https://github.com/sciapp/gitlab-registry-usage-rest',
     keywords=['Git', 'GitLab', 'Docker', 'Registry', 'disk capacity', 'RESTful'],
     classifiers=[
         'Development Status :: 4 - Beta',
