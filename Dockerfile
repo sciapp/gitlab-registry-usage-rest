@@ -10,7 +10,8 @@ FROM python:3.6-alpine
 RUN apk --no-cache add libffi openssl
 
 COPY --from=builder /usr/local/lib/python3.6/site-packages /usr/local/lib/python3.6/
+COPY --from=builder /usr/local/bin/gitlab-registry-usage-rest /usr/local/bin/gitlab-registry-usage-rest
 
 EXPOSE 80
 
-ENTRYPOINT ["python3", "-m", "gitlab_registry_usage_rest"]
+ENTRYPOINT ["gitlab-registry-usage-rest"]
