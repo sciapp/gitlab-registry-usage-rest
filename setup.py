@@ -18,7 +18,7 @@ def get_install_requires_from_requirements(requirements_filename='requirements.t
             requirements = requirements_file.readlines()
     except OSError:
         import logging
-        logging.warning('Could not convert the readme file to rst.')
+        logging.warning('Could not read the requirements file.')
     return requirements
 
 
