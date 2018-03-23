@@ -1,16 +1,16 @@
 import datetime
-import io
 from configparser import ConfigParser
+from typing import Any, Dict, Optional, TextIO, Union  # noqa: F401  # pylint: disable=unused-import
 
 DEFAULT_CONFIG_FILENAME = '/etc/gitlab_registry_usage_rest.conf'
 
 
 class ParseTimeDeltaError(Exception):
-    def __init__(self, timedelta_string):
+    def __init__(self, timedelta_string: str) -> None:
         super().__init__('"{}" cannot be parsed.'.format(timedelta_string))
 
 
-def parse_timedelta(timedelta_string):
+def parse_timedelta(timedelta_string: str) -> datetime.timedelta:
     units_to_keyword = {
         ('s', 'second', 'seconds'): 'seconds',
         ('m', 'minute', 'minutes'): 'minutes',
@@ -60,89 +60,89 @@ class Config:
             'username': 'root',
             'access_token': '00000000000000000000'
         }
-    }
+    }  # type: Dict[str, Dict[str, Any]]
 
     @classmethod
-    def write_default_config(cls, config_filename_or_file):
+    def write_default_config(cls, config_filename_or_file: Union[str, TextIO]) -> None:
         default_config = ConfigParser()
         default_config.read_dict(cls._default_config)
-        if isinstance(config_filename_or_file, io.IOBase):
-            config_file = config_filename_or_file
-            default_config.write(config_file)
-        else:
+        if isinstance(config_filename_or_file, str):
             with open(config_filename_or_file, 'w') as config_file:
                 default_config.write(config_file)
+        else:
+            config_file = config_filename_or_file
+            default_config.write(config_file)
 
-    def __init__(self, config_filename=DEFAULT_CONFIG_FILENAME):
+    def __init__(self, config_filename: Optional[str] = DEFAULT_CONFIG_FILENAME) -> None:
         self._config_filename = config_filename
         self._config = ConfigParser()
         self._config.read_dict(self._default_config)
         self.read_config()
 
-    def read_config(self, config_filename=None):
+    def read_config(self, config_filename: Optional[str] = None) -> None:
         if config_filename is not None:
             self._config_filename = config_filename
         if self._config_filename is not None:
             self._config.read(self._config_filename)
 
     @property
-    def socket_host(self):
+    def socket_host(self) -> str:
         return self._config['general']['socket_host']
 
     @property
-    def socket_port(self):
+    def socket_port(self) -> int:
         return int(self._config['general']['socket_port'])
 
     @property
-    def server_prefix(self):
+    def server_prefix(self) -> str:
         return self._config['general']['server_prefix']
 
     @property
-    def debug(self):
+    def debug(self) -> bool:
         return self._config['general']['debug'].lower() in ('true', 'yes', 't', 'y', '1')
 
     @property
-    def ldap_host(self):
+    def ldap_host(self) -> str:
         return self._config['ldap']['host']
 
     @property
-    def ldap_base_dn(self):
+    def ldap_base_dn(self) -> str:
         return self._config['ldap']['base_dn']
 
     @property
-    def ldap_valid_gid(self):
+    def ldap_valid_gid(self) -> str:
         return self._config['ldap']['valid_gid']
 
     @property
-    def ldap_username_attribute(self):
+    def ldap_username_attribute(self) -> str:
         return self._config['ldap']['username_attribute']
 
     @property
-    def ldap_gid_attribute(self):
+    def ldap_gid_attribute(self) -> str:
         return self._config['ldap']['gid_attribute']
 
     @property
-    def jwt_auth_token_expires(self):
+    def jwt_auth_token_expires(self) -> datetime.timedelta:
         return parse_timedelta(self._config['jwt']['auth_token_expires'])
 
     @property
-    def jwt_secret_key(self):
+    def jwt_secret_key(self) -> str:
         return self._config['jwt']['secret_key']
 
     @property
-    def gitlab_base_url(self):
+    def gitlab_base_url(self) -> str:
         return self._config['registry']['gitlab_base_url']
 
     @property
-    def registry_base_url(self):
+    def registry_base_url(self) -> str:
         return self._config['registry']['registry_base_url']
 
     @property
-    def username(self):
+    def username(self) -> str:
         return self._config['registry']['username']
 
     @property
-    def access_token(self):
+    def access_token(self) -> str:
         return self._config['registry']['access_token']
 
 

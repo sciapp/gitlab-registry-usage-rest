@@ -3,16 +3,17 @@ from flask import g
 from flask_httpauth import HTTPBasicAuth
 from flask_jwt_extended import create_access_token
 from .config import config
+from typing import cast
 
 http_basic_auth = HTTPBasicAuth()
 
 
-def create_jwt():
-    return create_access_token(identity=g.username)
+def create_jwt() -> str:
+    return cast(str, create_access_token(identity=g.username))
 
 
-@http_basic_auth.verify_password
-def _verify_password(username, password):
+@http_basic_auth.verify_password  # type: ignore
+def _verify_password(username: str, password: str) -> bool:
     ldap_url = config.ldap_host
     if not ldap_url.startswith('ldaps://'):
         ldap_url = 'ldaps://{}'.format(ldap_url)
