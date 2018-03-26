@@ -1,8 +1,12 @@
 FROM python:3.6-alpine as builder
 LABEL maintainer="Ingo Heimbach <i.heimbach@fz-juelich.de>"
 
-RUN apk --no-cache add build-base git libffi-dev openssl-dev && \
-    pip install --no-cache-dir "git+${CI_REPOSITORY_URL}@${CI_COMMIT_REF_NAME}"
+RUN apk --no-cache add build-base libffi-dev openssl-dev
+
+WORKDIR /
+COPY . gitlab-registry-usage-rest
+
+RUN pip install --no-cache-dir "file:///gitlab-registry-usage-rest"
 
 
 FROM python:3.6-alpine
