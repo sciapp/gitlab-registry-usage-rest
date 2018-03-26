@@ -1,0 +1,7 @@
+# Exclude all but with exceptions
+*
+!gitlab_registry_usage_rest/**/*.py
+!setup.py
+!LICENSE
+!README.md
+!requirements.txt

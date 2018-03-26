@@ -10,9 +10,7 @@ build:
   services:
     - docker:dind
   script:
-    - apk --no-cache add gettext
-    - envsubst < Dockerfile > Dockerfile_envsubst
-    - docker build -t ${CI_REGISTRY_IMAGE}:latest -f Dockerfile_envsubst .
+    - docker build -t ${CI_REGISTRY_IMAGE}:latest .
     - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
     - docker push ${CI_REGISTRY_IMAGE}:latest
   only:
