@@ -45,7 +45,7 @@ def get_argumentparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description='''
-%(prog)s is a RESTful web service for querying the memory usage of images in a GitLab registry.
+%(prog)s is a RESTful web service for querying the memory usage of repositories in a GitLab registry.
 '''
     )
     parser.add_argument(

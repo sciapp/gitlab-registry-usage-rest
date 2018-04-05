@@ -63,7 +63,7 @@ setup(
     },
     author='Ingo Heimbach',
     author_email='i.heimbach@fz-juelich.de',
-    description='A restful web service for querying the image sizes of a GitLab registry.',
+    description='A restful web service for querying the repository sizes of a GitLab registry.',
     long_description=long_description,
     license='MIT',
     url='https://github.com/sciapp/gitlab-registry-usage-rest',
