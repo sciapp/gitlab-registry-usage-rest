@@ -5,6 +5,6 @@ Flask-HTTPAuth
 Flask-JWT-Extended
 Flask-RESTful
 flask-restful-hal
-gitlab-registry-usage
+gitlab-registry-usage>=0.2.0
 json2html
 ldap3

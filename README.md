@@ -2,9 +2,9 @@
 
 ## Introduction
 
-*GitLab-Registry-Usage-REST* is a package that periodically collects image information (name, tags, sizes) of a GitLab
-registry server and offers the data via a secured [RESTful HAL](http://stateless.co/hal_specification.html) api. For
-the initial authentication a LDAP server is needed. Subsequent queries are secured by *JSON Web Tokens* (JWT).
+*GitLab-Registry-Usage-REST* is a package that periodically collects repository information (names, tags, sizes) of a
+GitLab registry server and offers the data via a secured [RESTful HAL](http://stateless.co/hal_specification.html) api.
+For the initial authentication a LDAP server is needed. Subsequent queries are secured by *JSON Web Tokens* (JWT).
 
 ## Installation
 
@@ -32,7 +32,7 @@ gitlab-registry-usage-rest --print-default-config
 
 and edit this default configuration to fit your environment.
 
-If you would like to use the docker image, you can bind mount a local configuration file with the `-v` switch:
+If you would like to use the docker repository, you can bind mount a local configuration file with the `-v` switch:
 
 ```bash
 docker run -v "$(pwd)/gitlab_registry_usage_rest.conf:/etc/gitlab_registry_usage_rest.conf" sciapp/gitlab-registry-usage-rest:latest
@@ -49,8 +49,8 @@ The server offers these api endpoints:
   Authorization: Bearer <token>
   ```
 
-- `/images`: Lists attributes of the *images* collection. Currently, only the timestamp of the last data refresh is
-  contained:
+- `/repositories`: Lists attributes of the *repositories* collection. Currently, only the timestamp of the last data
+  refresh is contained:
 
   ```json
   {
@@ -58,7 +58,7 @@ The server offers these api endpoints:
   }
   ```
 
-- `/images/<image_name>`: Queries attributes of a specific image:
+- `/repositories/<repository_name>`: Queries attributes of a specific repository:
 
   ```json
   {
@@ -68,9 +68,9 @@ The server offers these api endpoints:
   }
   ```
 
-- `/images/<image_name>/tags`: Endpoint for the collection of image tags, currently without any content.
+- `/repositories/<repository_name>/tags`: Endpoint for the collection of repository tags, currently without any content.
 
-- `/images/<image_name>/tags/<tag_name>`: Lists attributes of an image tag:
+- `/repositories/<repository_name>/tags/<tag_name>`: Lists attributes of a tagged image stored in a repository:
 
   ```json
   {
@@ -94,7 +94,7 @@ Links can be used to easily navigate between related resources. Embedded resourc
 hierarchy of resources with one GET request. Accordingly, the request
 
 ```
-/images?embed=true
+/repositories?embed=true
 ```
 
 returns all resources at once.
