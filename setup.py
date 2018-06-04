@@ -55,6 +55,7 @@ setup(
     name='gitlab-registry-usage-rest',
     version=version,
     packages=find_packages(),
+    python_requires='~=3.3',
     install_requires=install_requires,
     entry_points={
         'console_scripts': [
