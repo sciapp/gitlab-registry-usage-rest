@@ -21,6 +21,6 @@ deploy:
   image: iffregistry.fz-juelich.de/florianrhiem/iffdocker-deployment-image:latest
   script:
     - echo "$IFFDOCKER_KEY" > ~/.ssh/iffdocker_key
-    - echo -e "$CI_JOB_TOKEN\n$CI_REGISTRY_IMAGE:latest\ngitlab-registry-usage-rest" | ssh docker.iff.kfa-juelich.de
+    - echo -e "$CI_JOB_TOKEN\n$CI_REGISTRY_IMAGE:latest\ngitlab-registry-usage-rest" | ssh iffweb.iff.kfa-juelich.de
   only:
     - tags@Scientific-IT-Systems/administration/gitlab-registry-usage-rest
