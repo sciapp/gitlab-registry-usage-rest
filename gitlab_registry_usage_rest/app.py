@@ -8,7 +8,7 @@ from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from werkzeug.serving import run_simple
-from werkzeug.wsgi import DispatcherMiddleware
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from . import resources
 from .config import Config, config, DEFAULT_CONFIG_FILENAME
 from ._version import __version__, __version_info__  # noqa: F401 # pylint: disable=unused-import
