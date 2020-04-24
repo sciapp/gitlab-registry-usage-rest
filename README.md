@@ -21,6 +21,12 @@ or from DockerHub:
 docker run sciapp/gitlab-registry-usage-rest:latest --help
 ```
 
+or from the AUR for Arch Linux based systems:
+
+```bash
+yay -S gitlab-registry-usage-rest
+```
+
 ## Usage
 
 *Gitlab-Registry-Usage-REST* needs a configuration file in order to run. The default path is
@@ -88,7 +94,7 @@ the query string:
 ```
 
 Instead of a boolean value, the embed key can also take an integer number to only request a specific level of embedded
-resources. 
+resources.
 
 Links can be used to easily navigate between related resources. Embedded resources are convenient to query a complete
 hierarchy of resources with one GET request. Accordingly, the request
