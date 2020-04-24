@@ -1,6 +1,7 @@
 stages:
-  - build
-  - deploy
+- build
+- deploy
+- deploy-to-aur
 
 build:
   image: docker:latest
@@ -8,19 +9,76 @@ build:
   variables:
     DOCKER_DRIVER: overlay2
   services:
-    - docker:dind
+  - docker:dind
   script:
-    - docker build -t ${CI_REGISTRY_IMAGE}:latest .
-    - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
-    - docker push ${CI_REGISTRY_IMAGE}:latest
+  - docker build -t ${CI_REGISTRY_IMAGE}:latest .
+  - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
+  - docker push ${CI_REGISTRY_IMAGE}:latest
   only:
-    - tags
+  - tags
 
-deploy:
+deploy-to-dockerhost:
   stage: deploy
   image: iffregistry.fz-juelich.de/florianrhiem/iffdocker-deployment-image:latest
   script:
-    - echo "$IFFDOCKER_KEY" > ~/.ssh/iffdocker_key
-    - echo -e "$CI_JOB_TOKEN\n$CI_REGISTRY_IMAGE:latest\ngitlab-registry-usage-rest" | ssh iffweb.iff.kfa-juelich.de
+  - echo "$IFFDOCKER_KEY" > ~/.ssh/iffdocker_key
+  - echo -e "$CI_JOB_TOKEN\n$CI_REGISTRY_IMAGE:latest\ngitlab-registry-usage-rest" | ssh iffweb.iff.kfa-juelich.de
   only:
-    - tags@Scientific-IT-Systems/administration/gitlab-registry-usage-rest
+  - tags@Scientific-IT-Systems/administration/gitlab-registry-usage-rest
+
+deploy-to-github:
+  stage: deploy
+  image: iffregistry.fz-juelich.de/docker-images/gr-build-images/deploy
+  variables:
+    GIT_STRATEGY: none
+  only:
+  - master@Scientific-IT-Systems/administration/gitlab-registry-usage-rest
+  - develop@Scientific-IT-Systems/administration/gitlab-registry-usage-rest
+  - tags@Scientific-IT-Systems/administration/gitlab-registry-usage-rest
+  script:
+  - mkdir --mode=700 ~/.ssh/
+  - (umask 0377 && echo "${GITHUB_DEPLOY_KEY}" > ~/.ssh/id_rsa
+                && echo "github.com ${GITHUB_HOST_KEY}" >> ~/.ssh/known_hosts)
+  - git clone --mirror "${CI_REPOSITORY_URL}" "${CI_PROJECT_NAME}_mirror"
+  - cd "${CI_PROJECT_NAME}_mirror";
+    git push --mirror "git@github.com:sciapp/${CI_PROJECT_NAME}.git";
+    cd ..
+
+deploy-to-pypi:
+  stage: deploy
+  image: python:3-slim
+  only:
+  - tags@Scientific-IT-Systems/administration/gitlab-registry-usage-rest
+  script:
+  - pip install twine
+  - echo "[distutils]"                    > ~/.pypirc;
+    echo "index-servers ="               >> ~/.pypirc;
+    echo "    pypi"                      >> ~/.pypirc;
+    echo "[pypi]"                        >> ~/.pypirc;
+    echo "username = __token__"          >> ~/.pypirc;
+    echo "password = ${PYPI_DEPLOY_KEY}" >> ~/.pypirc;
+  - python setup.py sdist
+  - python setup.py bdist_wheel
+  - twine upload dist/*
+
+deploy-to-aur:
+  stage: deploy-to-aur
+  image: iffregistry.fz-juelich.de/docker-images/gr-build-images/$CI_JOB_NAME
+  only:
+  - tags@Scientific-IT-Systems/administration/gitlab-registry-usage-rest
+  script:
+  - mkdir --mode=700 ~/.ssh/
+  - (umask 0377 && echo "$AUR_PRIVATE_KEY" > ~/.ssh/id_rsa
+                && echo "aur.archlinux.org $AUR_HOST_KEY" >> ~/.ssh/known_hosts)
+  - git clone "ssh://aur@aur.archlinux.org/python-gitlab-registry-usage-rest.git" "python-gitlab-registry-usage-rest-aur"
+  - cd "python-gitlab-registry-usage-rest-aur"
+  - sed -i -e "/^pkgver=/c\pkgver=\"${CI_COMMIT_TAG#v}\"" -e "/^pkgrel=/c\pkgrel=\"1\"" PKGBUILD
+  - (
+      source PKGBUILD;
+      curl -o source -L "${source[0]}";
+      SHA256SUM="$(sha256sum source | awk '{ print $1 }')";
+      sed -i "/^sha256sums=/c\sha256sums=(\"${SHA256SUM}\")" PKGBUILD;
+    )
+  - makepkg --printsrcinfo > .SRCINFO
+  - git commit -a -m "Update to version ${CI_COMMIT_TAG#v}"
+  - git push
