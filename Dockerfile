@@ -1,5 +1,5 @@
 FROM python:3.6-alpine as builder
-LABEL maintainer="Ingo Heimbach <i.heimbach@fz-juelich.de>"
+LABEL maintainer="Ingo Meyer <i.meyer@fz-juelich.de>"
 
 RUN apk --no-cache add build-base libffi-dev openssl-dev
 
