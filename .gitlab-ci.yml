@@ -3,7 +3,7 @@ stages:
 - deploy
 - deploy-to-aur
 
-build:
+build-docker-image:
   image: docker:latest
   stage: build
   variables:
