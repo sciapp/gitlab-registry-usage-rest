@@ -32,7 +32,7 @@ setup(
         "Flask-JWT-Extended",
         "Flask-RESTful",
         "flask-restful-hal",
-        "gitlab-registry-usage>=0.2.0",
+        "gitlab-registry-usage>=0.3.0",
         "json2html",
         "ldap3",
         "typing",
