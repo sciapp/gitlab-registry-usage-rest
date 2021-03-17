@@ -37,7 +37,7 @@ class ResourceNotExistingError(Exception):
 
 
 class SecuredHalResource(HalResource):  # type: ignore
-    @jwt_required  # type: ignore
+    @jwt_required()  # type: ignore
     def get(self, **kwargs: Any) -> Any:
         return super().get(**kwargs)
 
